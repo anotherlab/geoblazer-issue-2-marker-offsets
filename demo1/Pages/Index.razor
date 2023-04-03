@@ -1,0 +1,101 @@
+﻿@page "/"
+
+<MapView @ref="_mapView" Longitude="_longitude" Latitude="_latitude" Zoom="11" Style="height: 600px; width: 100%;">
+    <Map ArcGisDefaultBasemap="arcgis-navigation">
+        <GraphicsLayer @ref="pointsLayer">
+        </GraphicsLayer>
+    </Map>
+    <ScaleBarWidget Position="OverlayPosition.BottomLeft" />
+    <CompassWidget Position="OverlayPosition.TopLeft" />
+</MapView>
+
+<button class="btn btn-primary" @onclick="AddOffSet">Offset Marker</button>
+
+@code {
+    // Buffalo, NY
+    private readonly double _latitude = 42.895715;
+    private readonly double _longitude = -78.78077;
+
+    private CoordinateEntity[] Positions;
+
+    // Polyline encoded set of points in Buffalo, NY
+    // See https://developers.google.com/maps/documentation/utilities/polylineutility
+    private string polyline = "itwdGvh_`NpF@?uEAaGpOPGrX";
+
+    GraphicsLayer pointsLayer;
+    MapView _mapView;
+
+    private Graphic GetNewGraphic(string color, CoordinateEntity point, double heading, double xOffset, double yOffset)
+    {
+        var symbol = new PictureMarkerSymbol($"https://static.arcgis.com/images/Symbols/Shapes/{color}Pin1LargeB.png",
+                        height: 80,
+                        width: 80,
+                        xOffset: xOffset,
+                        yOffset: yOffset,
+                        angle: heading);
+
+        var g = new Graphic(
+                new Point(point.Longitude, point.Latitude),
+                symbol);
+
+        return g;
+    }
+
+    private async void AddOffSet()
+    {
+        await AddLine();
+
+        // Add marker, zero offsets
+        await pointsLayer.Add(GetNewGraphic("Blue", Positions[2], 0.0, 0.0, 0.0));
+
+        // Add marker, positive offsets
+        await pointsLayer.Add(GetNewGraphic("Green", Positions[4], 0.0, 100.0, 100.0));
+
+        // Add marker, negative offsets
+        await pointsLayer.Add(GetNewGraphic("Red", Positions[5], 0.0, -100.0, -100.0));
+    }
+
+    private async Task AddLine()
+    {
+        var spatialReference = new SpatialReference(4326);
+        // This will return a set of lat/lng
+        var points = PolylineEncoder.Decode(polyline).ToArray();
+
+        Positions = points;
+
+        MyExtent extent = new();
+
+        if (points.Length > 1)
+        {
+            extent.ReadLatLon(points[0], true);
+
+            var sp = new MapPoint(points[0].Longitude, points[0].Latitude);
+            var polyPaths = new List<MapPath>();
+
+            for (var i = 1; i < points.Length; i++)
+            {
+                extent.ReadLatLon(points[i], false);
+                var dp = new MapPoint(points[i].Longitude, points[i].Latitude);
+
+                polyPaths.Add(new MapPath(sp, dp));
+
+                sp = dp;
+            }
+
+            var polyLine = new PolyLine(polyPaths.ToArray(), spatialReference);
+
+            var g = new Graphic(
+                polyLine,
+                new SimpleLineSymbol(new MapColor("green"), width: 3, LineStyle.Solid));
+
+            await pointsLayer.Clear();
+
+            await pointsLayer.Add(g);
+
+            Extent ex = new Extent(xmax: extent.MaxLongitude, xmin: extent.MinLongitude, ymax: extent.MaxLatitude, ymin: extent.MinLatitude, spatialReference: spatialReference);
+
+            await _mapView!.GoTo(ex);
+        }
+    }
+
+}
