@@ -19,7 +19,7 @@ public static class MauiProgram
         builder.Services.AddGeoBlazor();
         builder.Services.AddMauiBlazorWebView();
 
-		var mapSettings = new Dictionary<string, string> { { "ArcGISApiKey", "INSERT-YOUR-ESRI-API-KEY-HERE" } };
+        var mapSettings = new Dictionary<string, string> { { "ArcGISApiKey", "INSERT-YOUR-ESRI-API-KEY-HERE" } };
         builder.Configuration.AddInMemoryCollection(mapSettings);
 
 

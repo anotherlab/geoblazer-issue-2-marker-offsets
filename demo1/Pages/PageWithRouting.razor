@@ -1,0 +1,37 @@
+﻿@page "/pageroute"
+@page "/pageroute/student/{StudentId:int}"
+@page "/thisoneisfine"
+
+@inject NavigationManager NavManager
+
+<h3>Page With Routing</h3>
+Student ID is @StudentId
+
+<MapView Longitude="_longitude" Latitude="_latitude" Zoom="11" Style="height: 600px; width: 100%;">
+    <Map ArcGisDefaultBasemap="arcgis-navigation"></Map>
+    <ScaleBarWidget Position="OverlayPosition.BottomLeft" />
+    <CompassWidget Position="OverlayPosition.TopLeft" />
+</MapView>
+
+
+
+@code {
+    [Parameter]
+    public int? StudentId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? AltStudentId { get; set; }
+
+    // Buffalo, NY
+    private readonly double _latitude = 42.895715;
+    private readonly double _longitude = -78.78077;
+
+
+    int? GetStudentId()
+    {
+        return AltStudentId ?? StudentId;
+    }
+
+
+}

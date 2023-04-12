@@ -1,101 +1,21 @@
 ﻿@page "/"
 
-<MapView @ref="_mapView" Longitude="_longitude" Latitude="_latitude" Zoom="11" Style="height: 600px; width: 100%;">
-    <Map ArcGisDefaultBasemap="arcgis-navigation">
-        <GraphicsLayer @ref="pointsLayer">
-        </GraphicsLayer>
-    </Map>
-    <ScaleBarWidget Position="OverlayPosition.BottomLeft" />
-    <CompassWidget Position="OverlayPosition.TopLeft" />
-</MapView>
-
-<button class="btn btn-primary" @onclick="AddOffSet">Offset Marker</button>
-
+This demo shows two issues with GeoBlazor
+<p />
+Click on the <a href="mapdemo">Map Demo</a> to see an issue with marker placement
+<p />
+Click <a href="pageroute/student/1">Route param</a> to see the map fail to display when a parameter is passed as part of a route
+<br />
+This has to be the first page with a map to be shown.
+<br />
+If you click on <a href="mapdemo">Map Demo</a> first, the <a href="pageroute/student/1">Route param</a> page will display the map correctly
+<br />
+Clicking on the other map pages after calling <a href="pageroute/student/1">Route (1 param)</a> will also fail to display the map correctly
+<p />
+Clicking on the <a href="pageroute?AltStudentId=2"> route page with a query path parameter</a> appears to work correcty
+<p />
+Click <a href="thisoneisfine">Route (no param)</a> to see the map display correctly when parameters are not passed as part of a route
+Alternate routes appear to be fine. It's only when a parameter is passed in as a route path that the map fails to initialize correctly'
+<p />
 @code {
-    // Buffalo, NY
-    private readonly double _latitude = 42.895715;
-    private readonly double _longitude = -78.78077;
-
-    private CoordinateEntity[] Positions;
-
-    // Polyline encoded set of points in Buffalo, NY
-    // See https://developers.google.com/maps/documentation/utilities/polylineutility
-    private string polyline = "itwdGvh_`NpF@?uEAaGpOPGrX";
-
-    GraphicsLayer pointsLayer;
-    MapView _mapView;
-
-    private Graphic GetNewGraphic(string color, CoordinateEntity point, double heading, double xOffset, double yOffset)
-    {
-        var symbol = new PictureMarkerSymbol($"https://static.arcgis.com/images/Symbols/Shapes/{color}Pin1LargeB.png",
-                        height: 80,
-                        width: 80,
-                        xOffset: xOffset,
-                        yOffset: yOffset,
-                        angle: heading);
-
-        var g = new Graphic(
-                new Point(point.Longitude, point.Latitude),
-                symbol);
-
-        return g;
-    }
-
-    private async void AddOffSet()
-    {
-        await AddLine();
-
-        // Add marker, zero offsets
-        await pointsLayer.Add(GetNewGraphic("Blue", Positions[2], 0.0, 0.0, 0.0));
-
-        // Add marker, positive offsets
-        await pointsLayer.Add(GetNewGraphic("Green", Positions[4], 0.0, 100.0, 100.0));
-
-        // Add marker, negative offsets
-        await pointsLayer.Add(GetNewGraphic("Red", Positions[5], 0.0, -100.0, -100.0));
-    }
-
-    private async Task AddLine()
-    {
-        var spatialReference = new SpatialReference(4326);
-        // This will return a set of lat/lng
-        var points = PolylineEncoder.Decode(polyline).ToArray();
-
-        Positions = points;
-
-        MyExtent extent = new();
-
-        if (points.Length > 1)
-        {
-            extent.ReadLatLon(points[0], true);
-
-            var sp = new MapPoint(points[0].Longitude, points[0].Latitude);
-            var polyPaths = new List<MapPath>();
-
-            for (var i = 1; i < points.Length; i++)
-            {
-                extent.ReadLatLon(points[i], false);
-                var dp = new MapPoint(points[i].Longitude, points[i].Latitude);
-
-                polyPaths.Add(new MapPath(sp, dp));
-
-                sp = dp;
-            }
-
-            var polyLine = new PolyLine(polyPaths.ToArray(), spatialReference);
-
-            var g = new Graphic(
-                polyLine,
-                new SimpleLineSymbol(new MapColor("green"), width: 3, LineStyle.Solid));
-
-            await pointsLayer.Clear();
-
-            await pointsLayer.Add(g);
-
-            Extent ex = new Extent(xmax: extent.MaxLongitude, xmin: extent.MinLongitude, ymax: extent.MaxLatitude, ymin: extent.MinLatitude, spatialReference: spatialReference);
-
-            await _mapView!.GoTo(ex);
-        }
-    }
-
 }
